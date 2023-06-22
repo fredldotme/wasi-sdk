@@ -89,7 +89,7 @@ LIBCXX_CMAKE_FLAGS = \
     -DLIBCXX_CXX_ABI_INCLUDE_PATHS=$(LLVM_PROJ_DIR)/libcxxabi/include \
     -DLIBCXX_HAS_MUSL_LIBC:BOOL=ON \
     -DLIBCXX_ABI_VERSION=2 \
-    -DLIBCXXABI_ENABLE_EXCEPTIONS:BOOL=ON \
+    -DLIBCXXABI_ENABLE_EXCEPTIONS:BOOL=OFF \
     -DLIBCXXABI_ENABLE_SHARED:BOOL=OFF \
     -DLIBCXXABI_SILENT_TERMINATE:BOOL=ON \
     -DLIBCXXABI_ENABLE_THREADS:BOOL=ON \
@@ -110,8 +110,8 @@ build/libcxx-tide.BUILT:
 	cd build/libcxx-threads && cmake -G Ninja $(LIBCXX_CMAKE_FLAGS:@PTHREAD@=ON) \
 		-DCMAKE_SYSROOT=$(SYSROOT) \
 		-DCMAKE_AR=$(LLVM_PROJ_DIR)/build_osx/bin/llvm-ar \
-		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) -ftls-model=local-exec" \
-		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) -ftls-model=local-exec" \
+		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) -ftls-model=local-exec -fno-exceptions" \
+		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) -ftls-model=local-exec -fno-exceptions" \
 		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi \
 		-DLIBCXXABI_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi \
 		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
