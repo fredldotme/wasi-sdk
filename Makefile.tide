@@ -30,7 +30,7 @@ else
 
 WASI_SDK?=/opt/wasi-sdk
 PREFIX?=/opt/wasi-sdk
-DESTDIR=$(abspath build/install)
+DESTDIR?=$(abspath build/install-$(NAME))
 BUILD_PREFIX=$(DESTDIR)$(PREFIX)
 PATH_PREFIX=$(BUILD_PREFIX)
 ESCAPE_SLASH?=
@@ -55,6 +55,10 @@ clean:
 	rm -rf build $(DESTDIR)
 
 # Flags for libcxx and libcxxabi.
+THREADING ?= ON
+TARGET ?= wasm32-wasi-threads
+EXCEPTIONS ?= OFF
+
 LIBCXX_CMAKE_FLAGS = \
     -DCMAKE_SYSTEM_NAME=WASI \
     -DCMAKE_SYSTEM_VERSION=1 \
@@ -64,62 +68,87 @@ LIBCXX_CMAKE_FLAGS = \
     -DCMAKE_ASM_COMPILER=$(LLVM_PROJ_DIR)/build_osx/bin/clang \
     -DCMAKE_AR=$(LLVM_PROJ_DIR)/build_osx/bin/llvm-ar \
     -DCMAKE_RANLIB=$(LLVM_PROJ_DIR)/build_osx/bin/llvm-ranlib \
-    -DCMAKE_C_COMPILER_TARGET=wasm32-wasi \
-    -DCMAKE_CXX_COMPILER_TARGET=wasm32-wasi \
-    -DCMAKE_ASM_COMPILER_TARGET=wasm32-wasi \
     -DCMAKE_C_COMPILER_WORKS=ON \
     -DCMAKE_CXX_COMPILER_WORKS=ON \
     -DCMAKE_MODULE_PATH=$(ROOT_DIR)/cmake \
-    -DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide.cmake \
     -DLLVM_CONFIG_PATH=$(LLVM_PROJ_DIR)/build_osx/bin/llvm-config \
     -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
     -DCXX_SUPPORTS_CXX11=ON \
-    -DLIBCXX_ENABLE_THREADS:BOOL=ON \
-    -DLIBCXX_HAS_PTHREAD_API:BOOL=ON \
+    -DLIBCXX_ENABLE_THREADS:BOOL=$(THREADING) \
+    -DLIBCXX_HAS_PTHREAD_API:BOOL=$(THREADING) \
     -DLIBCXX_HAS_EXTERNAL_THREAD_API:BOOL=OFF \
     -DLIBCXX_BUILD_EXTERNAL_THREAD_LIBRARY:BOOL=OFF \
     -DLIBCXX_HAS_WIN32_THREAD_API:BOOL=OFF \
     -DLLVM_COMPILER_CHECKED=ON \
-    -DCMAKE_BUILD_TYPE=RelWithDebugInfo \
+    -DCMAKE_BUILD_TYPE=Release \
     -DLIBCXX_ENABLE_SHARED:BOOL=OFF \
     -DLIBCXX_ENABLE_EXPERIMENTAL_LIBRARY:BOOL=OFF \
-    -DLIBCXX_ENABLE_EXCEPTIONS:BOOL=OFF \
+    -DLIBCXX_ENABLE_EXCEPTIONS:BOOL=$(EXCEPTIONS) \
     -DLIBCXX_ENABLE_FILESYSTEM:BOOL=OFF \
     -DLIBCXX_CXX_ABI=libcxxabi \
     -DLIBCXX_CXX_ABI_INCLUDE_PATHS=$(LLVM_PROJ_DIR)/libcxxabi/include \
     -DLIBCXX_HAS_MUSL_LIBC:BOOL=ON \
     -DLIBCXX_ABI_VERSION=2 \
-    -DLIBCXXABI_ENABLE_EXCEPTIONS:BOOL=ON \
+    -DLIBCXXABI_ENABLE_EXCEPTIONS:BOOL=$(EXCEPTIONS) \
     -DLIBCXXABI_ENABLE_SHARED:BOOL=OFF \
+    -DLIBCXXABI_ENABLE_STATIC_UNWINDER:BOOL=$(EXCEPTIONS) \
     -DLIBCXXABI_SILENT_TERMINATE:BOOL=ON \
-    -DLIBCXXABI_ENABLE_THREADS:BOOL=ON \
-    -DLIBCXXABI_HAS_PTHREAD_API:BOOL=ON \
+    -DLIBCXXABI_ENABLE_THREADS:BOOL=$(THREADING) \
+    -DLIBCXXABI_HAS_PTHREAD_API:BOOL=$(THREADING) \
     -DLIBCXXABI_HAS_EXTERNAL_THREAD_API:BOOL=OFF \
     -DLIBCXXABI_BUILD_EXTERNAL_THREAD_LIBRARY:BOOL=OFF \
     -DLIBCXXABI_HAS_WIN32_THREAD_API:BOOL=OFF \
     -DLIBCXXABI_ENABLE_PIC:BOOL=OFF \
-    -DLIBUNWIND_ENABLE_SHARED:BOOL=OFF \
-    -DLIBUNWIND_ENABLE_STATIC:BOOL=OFF \
+    -DLIBCXXABI_NON_DEMANGLING_TERMINATE:BOOL=ON \
+    -DLIBCXXABI_USE_LLVM_UNWINDER:BOOL=$(EXCEPTIONS) \
+    -DLIBCXXABI_ENABLE_ASSERTIONS=0 \
+    -DLIBUNWIND_ENABLE_SHARED=0 \
+    -DLIBUNWIND_ENABLE_STATIC=1 \
+    -DLIBUNWIND_ENABLE_ASSERTIONS=0 \
+    -DLIBUNWIND_HIDE_SYMBOLS=1 \
+    -DLIBUNWIND_ENABLE_CROSS_UNWINDING=1 \
     -DWASI_SDK_PREFIX=$(WASI_SDK) \
     -DUNIX:BOOL=ON \
     --debug-trycompile
 
 build/libcxx-tide.BUILT:
 	# Do the build.
-	mkdir -p build/libcxx-threads
-	cd build/libcxx-threads && cmake -G Ninja $(LIBCXX_CMAKE_FLAGS:@PTHREAD@=ON) \
+	rm -rf build/libcxx || true
+	mkdir -p build/libcxx
+	cd build/libcxx && cmake -G Ninja $(LIBCXX_CMAKE_FLAGS) \
 		-DCMAKE_SYSROOT=$(SYSROOT) \
+		-DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide.cmake \
 		-DCMAKE_AR=$(LLVM_PROJ_DIR)/build_osx/bin/llvm-ar \
-		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) -ftls-model=local-exec" \
-		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) -ftls-model=local-exec" \
+		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CFLAGS) -fwasm-exceptions" \
+		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CXXFLAGS) -fwasm-exceptions" \
 		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi \
 		-DLIBCXXABI_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi \
 		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
 		$(LLVM_PROJ_DIR)/runtimes
-	ninja $(NINJA_FLAGS) -C build/libcxx-threads
+	ninja $(NINJA_FLAGS) -C build/libcxx
 	# Do the install.
-	DESTDIR=$(DESTDIR) ninja $(NINJA_FLAGS) -C build/libcxx-threads install
+	DESTDIR=$(DESTDIR) ninja $(NINJA_FLAGS) -C build/libcxx install
 	touch build/libcxx-tide.BUILT
+
+
+build/libcxx-threads-tide.BUILT:
+	# Do the build.
+	rm -rf build/libcxx || true
+	mkdir -p build/libcxx
+	cd build/libcxx && cmake -G Ninja $(LIBCXX_CMAKE_FLAGS) \
+		-DCMAKE_SYSROOT=$(SYSROOT) \
+		-DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide-threads.cmake \
+		-DCMAKE_AR=$(LLVM_PROJ_DIR)/build_osx/bin/llvm-ar \
+		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) -ftls-model=local-exec -fwasm-exceptions" \
+		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) -ftls-model=local-exec -fwasm-exceptions" \
+		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi-threads \
+		-DLIBCXXABI_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi-threads \
+		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
+		$(LLVM_PROJ_DIR)/runtimes
+	ninja $(NINJA_FLAGS) -C build/libcxx
+	# Do the install.
+	DESTDIR=$(DESTDIR) ninja $(NINJA_FLAGS) -C build/libcxx install
+	touch build/libcxx-threads-tide.BUILT
 
 build/config.BUILT:
 	mkdir -p $(BUILD_PREFIX)/share/misc
@@ -131,7 +160,7 @@ build/config.BUILT:
 
 build: build/libcxx.BUILT build/config.BUILT
 
-tidebuild: build/libcxx-tide.BUILT
+# tidebuild: build/libcxx-tide.BUILT build/libcxx-threads-tide.BUILT
 
 strip: build/llvm.BUILT
 	./strip_symbols.sh $(BUILD_PREFIX)/bin
