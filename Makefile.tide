@@ -59,19 +59,26 @@ THREADING ?= ON
 TARGET ?= wasm32-wasi-threads
 EXCEPTIONS ?= OFF
 
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+    CLANG_BUILD ?= build-linux
+else
+    CLANG_BUILD ?= build_osx
+endif
+
 LIBCXX_CMAKE_FLAGS = \
     -DCMAKE_SYSTEM_NAME=WASI \
     -DCMAKE_SYSTEM_VERSION=1 \
     -DCMAKE_SYSTEM_PROCESSOR=wasm32 \
-    -DCMAKE_C_COMPILER=$(LLVM_PROJ_DIR)/build_osx/bin/clang \
-    -DCMAKE_CXX_COMPILER=$(LLVM_PROJ_DIR)/build_osx/bin/clang++ \
-    -DCMAKE_ASM_COMPILER=$(LLVM_PROJ_DIR)/build_osx/bin/clang \
-    -DCMAKE_AR=$(LLVM_PROJ_DIR)/build_osx/bin/llvm-ar \
-    -DCMAKE_RANLIB=$(LLVM_PROJ_DIR)/build_osx/bin/llvm-ranlib \
+    -DCMAKE_C_COMPILER=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/clang \
+    -DCMAKE_CXX_COMPILER=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/clang++ \
+    -DCMAKE_ASM_COMPILER=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/clang \
+    -DCMAKE_AR=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-ar \
+    -DCMAKE_RANLIB=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-ranlib \
     -DCMAKE_C_COMPILER_WORKS=ON \
     -DCMAKE_CXX_COMPILER_WORKS=ON \
     -DCMAKE_MODULE_PATH=$(ROOT_DIR)/cmake \
-    -DLLVM_CONFIG_PATH=$(LLVM_PROJ_DIR)/build_osx/bin/llvm-config \
+    -DLLVM_CONFIG_PATH=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-config \
     -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
     -DCXX_SUPPORTS_CXX11=ON \
     -DLIBCXX_ENABLE_THREADS:BOOL=$(THREADING) \
@@ -118,7 +125,7 @@ build/libcxx-tide.BUILT:
 	cd build/libcxx && cmake -G Ninja $(LIBCXX_CMAKE_FLAGS) \
 		-DCMAKE_SYSROOT=$(SYSROOT) \
 		-DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide.cmake \
-		-DCMAKE_AR=$(LLVM_PROJ_DIR)/build_osx/bin/llvm-ar \
+		-DCMAKE_AR=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-ar \
 		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CFLAGS) -fwasm-exceptions" \
 		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CXXFLAGS) -fwasm-exceptions" \
 		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi \
@@ -138,7 +145,7 @@ build/libcxx-threads-tide.BUILT:
 	cd build/libcxx && cmake -G Ninja $(LIBCXX_CMAKE_FLAGS) \
 		-DCMAKE_SYSROOT=$(SYSROOT) \
 		-DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide-threads.cmake \
-		-DCMAKE_AR=$(LLVM_PROJ_DIR)/build_osx/bin/llvm-ar \
+		-DCMAKE_AR=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-ar \
 		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) -ftls-model=local-exec -fwasm-exceptions" \
 		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) -ftls-model=local-exec -fwasm-exceptions" \
 		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi-threads \
