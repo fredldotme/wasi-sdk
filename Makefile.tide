@@ -127,11 +127,11 @@ build/libcxx-tide.BUILT:
 		-DCMAKE_SYSROOT=$(SYSROOT) \
 		-DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide.cmake \
 		-DCMAKE_AR=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-ar \
-		-DCMAKE_C_FLAGS="-D__USING_WASM_EXCEPTIONS__ $(DEBUG_PREFIX_MAP) $(EXTRA_CFLAGS) $(EXCEPTIONS_FLAGS)" \
-		-DCMAKE_CXX_FLAGS="-D__USING_WASM_EXCEPTIONS__ $(DEBUG_PREFIX_MAP) $(EXTRA_CXXFLAGS) $(EXCEPTIONS_FLAGS)" \
+		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CFLAGS) $(EXCEPTIONS_FLAGS)" \
+		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CXXFLAGS) $(EXCEPTIONS_FLAGS)" \
 		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi \
 		-DLIBCXXABI_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi \
-		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
+		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
 		$(LLVM_PROJ_DIR)/runtimes
 	ninja $(NINJA_FLAGS) -C build/libcxx
 	# Do the install.
@@ -147,11 +147,11 @@ build/libcxx-threads-tide.BUILT:
 		-DCMAKE_SYSROOT=$(SYSROOT) \
 		-DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide-threads.cmake \
 		-DCMAKE_AR=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-ar \
-		-DCMAKE_C_FLAGS="-D__USING_WASM_EXCEPTIONS__ $(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
-		-DCMAKE_CXX_FLAGS="-D__USING_WASM_EXCEPTIONS__ $(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
+		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
+		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
 		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi-threads \
 		-DLIBCXXABI_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi-threads \
-		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
+		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
 		$(LLVM_PROJ_DIR)/runtimes
 	ninja $(NINJA_FLAGS) -C build/libcxx
 	# Do the install.
