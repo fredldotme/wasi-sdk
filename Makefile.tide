@@ -58,6 +58,7 @@ clean:
 THREADING ?= ON
 TARGET ?= wasm32-wasi-threads
 EXCEPTIONS ?= OFF
+EXCEPTIONS_FLAGS ?= ""
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
@@ -126,8 +127,8 @@ build/libcxx-tide.BUILT:
 		-DCMAKE_SYSROOT=$(SYSROOT) \
 		-DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide.cmake \
 		-DCMAKE_AR=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-ar \
-		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CFLAGS) -fwasm-exceptions" \
-		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CXXFLAGS) -fwasm-exceptions" \
+		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CFLAGS) $(EXCEPTIONS_FLAGS)" \
+		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CXXFLAGS) $(EXCEPTIONS_FLAGS)" \
 		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi \
 		-DLIBCXXABI_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi \
 		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
@@ -146,8 +147,8 @@ build/libcxx-threads-tide.BUILT:
 		-DCMAKE_SYSROOT=$(SYSROOT) \
 		-DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide-threads.cmake \
 		-DCMAKE_AR=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-ar \
-		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) -ftls-model=local-exec -fwasm-exceptions" \
-		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) -ftls-model=local-exec -fwasm-exceptions" \
+		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
+		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
 		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi-threads \
 		-DLIBCXXABI_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi-threads \
 		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
