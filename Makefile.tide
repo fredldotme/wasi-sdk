@@ -127,11 +127,11 @@ build/libcxx-tide.BUILT:
 		-DCMAKE_SYSROOT=$(SYSROOT) \
 		-DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide.cmake \
 		-DCMAKE_AR=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-ar \
-		-DCMAKE_C_FLAGS="-D__USING_WASM_EXCEPTIONS__ $(DEBUG_PREFIX_MAP) $(EXTRA_CFLAGS) $(EXCEPTIONS_FLAGS)" \
-		-DCMAKE_CXX_FLAGS="-D__USING_WASM_EXCEPTIONS__ $(DEBUG_PREFIX_MAP) $(EXTRA_CXXFLAGS) $(EXCEPTIONS_FLAGS)" \
+		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CFLAGS)" \
+		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) $(EXTRA_CXXFLAGS)" \
 		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi \
 		-DLIBCXXABI_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi \
-		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
+		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
 		$(LLVM_PROJ_DIR)/runtimes
 	ninja $(NINJA_FLAGS) -C build/libcxx
 	# Do the install.
@@ -147,16 +147,35 @@ build/libcxx-threads-tide.BUILT:
 		-DCMAKE_SYSROOT=$(SYSROOT) \
 		-DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide-threads.cmake \
 		-DCMAKE_AR=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-ar \
-		-DCMAKE_C_FLAGS="-D__USING_WASM_EXCEPTIONS__ $(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
-		-DCMAKE_CXX_FLAGS="-D__USING_WASM_EXCEPTIONS__ $(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
+		-DCMAKE_C_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
+		-DCMAKE_CXX_FLAGS="$(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
 		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi-threads \
 		-DLIBCXXABI_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi-threads \
-		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
+		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
 		$(LLVM_PROJ_DIR)/runtimes
 	ninja $(NINJA_FLAGS) -C build/libcxx
 	# Do the install.
 	DESTDIR=$(DESTDIR) ninja $(NINJA_FLAGS) -C build/libcxx install
 	touch build/libcxx-threads-tide.BUILT
+
+build/libcxx-threads-exce-tide.BUILT:
+	# Do the build.
+	rm -rf build/libcxx || true
+	mkdir -p build/libcxx
+	cd build/libcxx && cmake -G Ninja $(LIBCXX_CMAKE_FLAGS) \
+		-DCMAKE_SYSROOT=$(SYSROOT) \
+		-DCMAKE_TOOLCHAIN_FILE=$(ROOT_DIR)/wasi-sdk-tide-threads-exce.cmake \
+		-DCMAKE_AR=$(LLVM_PROJ_DIR)/$(CLANG_BUILD)/bin/llvm-ar \
+		-DCMAKE_C_FLAGS="-D__USING_WASM_EXCEPTIONS__ $(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
+		-DCMAKE_CXX_FLAGS="-D__USING_WASM_EXCEPTIONS__ $(DEBUG_PREFIX_MAP) -pthread $(EXTRA_CXXFLAGS) $(EXCEPTIONS_FLAGS) -ftls-model=local-exec" \
+		-DLIBCXX_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi-threads-exce \
+		-DLIBCXXABI_LIBDIR_SUFFIX=$(ESCAPE_SLASH)/wasm32-wasi-threads-exce \
+		-DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
+		$(LLVM_PROJ_DIR)/runtimes
+	ninja $(NINJA_FLAGS) -C build/libcxx
+	# Do the install.
+	DESTDIR=$(DESTDIR) ninja $(NINJA_FLAGS) -C build/libcxx install
+	touch build/libcxx-threads-tide-exce.BUILT
 
 build/config.BUILT:
 	mkdir -p $(BUILD_PREFIX)/share/misc
